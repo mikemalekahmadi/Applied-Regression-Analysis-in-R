@@ -1,0 +1,115 @@
+#----------------------------------------------------------------------
+##
+## Applied Regression Analysis in R
+## 
+## Dr. Mike Malek-Ahmadi (Banner Alzheimer's Institute)
+## 
+### Code:
+
+##### INSTALL R PACKAGES #####
+install.packages("ggplot2")
+install.packages("dplyr")
+install.packages("MASS")
+install.packages("readxl")
+install.packages("robust")
+install.packages("robustbase")
+install.packages("nlme")
+
+##### Load R PACKAGES #####
+library(ggplot2)
+library(dplyr)
+library(MASS)
+library(readxl)
+library(robust)
+library(robustbase)
+library(nlme)
+
+## Importing data from a Microsoft Excel spreadsheet
+library(readxl)
+workshop_dataset<-read_excel("workshop_dataset.xlsx")
+View(npi_dataset)
+summary(workshop_dataset)
+
+# Histogram for inspection of the dependent variable
+hist(workshop_dataset$animal_fluency)
+hist(workshop_dataset$geri_dep_scale)
+
+# QQ Plot for inspection of the dependent variable
+qqnorm(workshop_dataset$animal_fluency)
+qqnorm(workshop_dataset$geri_dep_scale)
+
+# Shapiro-Wilk test for the normality assumption of the dependent variable
+shapiro.test(workshop_dataset$animal_fluency)
+shapiro.test(workshop_dataset$geri_dep_scale)
+
+# Simple linear regression model for CDR-SOB as a predictor of Animal Fluency performance
+cdr_sob_animal<-lm(animal_fluency~cdr_sob, data=workshop_dataset)
+summary(cdr_sob_animal)
+
+# Multivariable linear regression model for CDR-SOB as a predictor of Animal Fluency performance
+#after adjusting for Geriatric Depression Scale and MMSE scores. 
+cdr_sob_animal_adjusted<-lm(animal_fluency~geri_dep_scale+mmse+cdr_sob, data=workshop_dataset)
+summary(cdr_sob_animal_adjusted)
+
+#Spearman correlation for CDR-SOB and MMSE
+cor(workshop_dataset$cdr_sob, workshop_dataset$mmse, method=“spearman”, use=“complete.obs”)
+
+# Comparison of Akaike's Information Criteria (AIC) values between simple and multivariable
+# linear regression models
+AIC(cdr_sob_animal)
+AIC(cdr_sob_animal_adjusted)
+
+#Linear and robust regression models using the Judgment of Line Orientation test as a predictor of the Alzheimer's Questionnaire
+library(robust)
+library(robustbase)
+hist(workshop_dataset$faq)
+qqnorm(workshop_dataset$faq)
+linear_animal_fluency_faq<-lm(faq~animal_fluency, data = workshop_dataset)
+robust_animal_fluency_faq<-lmRob(faq~animal_fluency, data = workshop_dataset)
+
+#View results of models
+summary(linear_animal_fluency_faq)
+summary(robust_animal_fluency_faq)
+
+#Analysis of NPI-Q for AD and MCI groups
+
+#To create separate datasets for MCI and AD groups
+mci_dataset<-subset(workshop_dataset, dx=="MCI")
+ad_dataset<-subset(workshop_dataset, dx=="AD")
+
+#Examine distribution of NPI-Q scores for MCI and AD groups
+hist(mci_dataset$npiq_total)
+hist(ad_dataset$npiq_total)
+
+#Poisson and negative binomial regression models for MMSE as a predictor of NPI-Q in AD
+poisson_ad<-glm(npiq_total~mmse, family=poisson(link="log"), data=ad_data)
+library(MASS)
+negative_binomial_ad<-glm.nb(npiq_total~mmse, data=ad_data)
+
+#View results of models
+summary(poisson_ad)
+summary(negative_binomial_ad)
+
+#Poisson and negative binomial regression models for MMSE as a predictor of NPI-Q in MCI
+poisson_mci<-glm(npiq_total~mmse, family=poisson(link="log"), data=mci_data)
+library(MASS)
+negative_binomial_mci<-glm.nb(npiq_total~mmse, data=mci_data)
+
+#View results of models
+summary(poisson_mci)
+summary(negative_binomial_mci)
+
+#Test residual deviance values from AD and MCI models in the Chi-square distribution for model fit
+1-pchisq(251.15, 209)
+1-pchisq(114.08, 99)
+
+#GLM Gamma Model Example
+gamma_model_example<-glm(homocysteine~age+sex_01+kif6carrier_01, family="Gamma"(link="log"), data=gamma_dataset)
+summary(gamma_model_example)
+
+#Logistic regression example using sex as a predictor of low or high Braak stage
+braak_sex_logistic<-glm(braak_01~sex_01, family=binomial(link="logit"), data= sex_braak_data)
+
+#Linear mixed model example of sex differences on longitudinal cognitive change
+moca_longitudinal_sex_diff<-lme(moca~time+sex+time*sex, random=~1+time|study_id, data=lmm_example)
+
